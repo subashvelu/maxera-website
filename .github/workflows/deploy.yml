@@ -15,7 +15,6 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Job 1: Integration Testing & Health Artifact Generation
   test-and-report:
     runs-on: ubuntu-latest
     steps:
@@ -27,14 +26,13 @@ jobs:
         with:
           node-version: 18
 
-      - name: Run Integration Tests & System Verification
+      - name: Run Integration Tests & Health Report
         run: |
           mkdir -p reports
           echo "==================================================" > reports/integration-test-report.txt
           echo "       MAXERA WEBSITE CI/CD INTEGRATION REPORT    " >> reports/integration-test-report.txt
           echo "==================================================" >> reports/integration-test-report.txt
           echo "Execution Date : $(date)" >> reports/integration-test-report.txt
-          echo "Triggered By   : $GITHUB_ACTOR" >> reports/integration-health-report.txt
           echo "Branch         : $GITHUB_REF_NAME" >> reports/integration-test-report.txt
           echo "Commit SHA     : $GITHUB_SHA" >> reports/integration-test-report.txt
           echo "OS Environment : $RUNNER_OS" >> reports/integration-test-report.txt
@@ -51,7 +49,6 @@ jobs:
           path: reports/
           retention-days: 7
 
-  # Job 2: Build Next.js Static Application
   build:
     needs: test-and-report
     runs-on: ubuntu-latest
@@ -68,14 +65,9 @@ jobs:
         uses: actions/configure-pages@v4
 
       - name: Install Dependencies
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+        run: npm install --legacy-peer-deps
 
-      - name: Build and Export Site
+      - name: Build Next.js Static Export
         run: npm run build
 
       - name: Upload Pages Artifact
@@ -83,7 +75,6 @@ jobs:
         with:
           path: ./out
 
-  # Job 3: Direct Deploy to GitHub Pages (Live Hosting)
   deploy:
     environment:
       name: github-pages
